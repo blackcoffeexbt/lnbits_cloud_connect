@@ -42,67 +42,56 @@ window_vars(user) }}
     </q-card>
     
 
+    
+
     <div class="q-mt-lg">
-      <span class="text-h5">Owner Data</span>
+      <span class="text-h5">SSH Tunnels</span>
     </div>
     <q-card
-      id="ownerDataCard"
+      id="sshTunnelCard"
       class="q-mt-xs"
     >
-      <q-card-section
-        class=""
-      >
+      <q-card-section>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col">
             <q-input
               :label="$t('search')"
               dense
               class="q-pr-xl"
-              v-model="ownerDataTable.search"
+              v-model="sshTunnelTable.search"
             >
               <template v-slot:before>
-                <q-icon name="search"> </q-icon>
+                <q-icon name="search"></q-icon>
               </template>
               <template v-slot:append>
                 <q-icon
-                  v-if="ownerDataTable.search !== ''"
+                  v-if="sshTunnelTable.search !== ''"
                   name="close"
-                  @click="ownerDataTable.search = ''"
+                  @click="sshTunnelTable.search = ''"
                   class="cursor-pointer"
-                >
-                </q-icon>
+                ></q-icon>
               </template>
             </q-input>
           </div>
           <div class="col-auto">
-            
             <q-btn
-              @click="showNewOwnerDataForm()"
+              @click="showNewSSHTunnelForm()"
               unelevated
-              split
               color="primary"
             >
-              New Owner Data
+              New SSH Tunnel
             </q-btn>
-            
-            <q-btn
-              flat
-              color="grey"
-              icon="file_download"
-              @click="exportOwnerDataCSV"
-              >CSV</q-btn
-            >
           </div>
         </div>
         <q-table
           dense
           flat
-          :rows="ownerDataList"
+          :rows="sshTunnelList"
           row-key="id"
-          :columns="ownerDataTable.columns"
-          v-model:pagination="ownerDataTable.pagination"
-          :loading="ownerDataTable.loading"
-          @request="getOwnerData"
+          :columns="sshTunnelTable.columns"
+          v-model:pagination="sshTunnelTable.pagination"
+          :loading="sshTunnelTable.loading"
+          @request="getSSHTunnels"
         >
           <template v-slot:header="props">
             <q-tr :props="props">
@@ -116,148 +105,54 @@ window_vars(user) }}
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td auto-width>
-                 
                 <q-btn
                   flat
                   dense
                   size="xs"
-                  @click="showEditOwnerDataForm(props.row)"
-                  icon="edit"
-                  color="light-blue"
+                  @click="toggleSSHTunnel(props.row)"
+                  :icon="props.row.is_connected ? 'link_off' : 'link'"
+                  :color="props.row.is_connected ? 'red' : 'green'"
                   class="q-mr-sm"
                 >
-                  <q-tooltip> Edit </q-tooltip>
+                  <q-tooltip>${ props.row.is_connected ? 'Disconnect' : 'Connect' }</q-tooltip>
                 </q-btn>
                 
                 <q-btn
                   flat
                   dense
                   size="xs"
-                  @click="deleteOwnerData(props.row.id)"
-                  icon="cancel"
-                  color="pink"
+                  @click="showSSHTunnelDetails(props.row)"
+                  icon="info"
+                  color="blue"
                   class="q-mr-sm"
                 >
-                  <q-tooltip> Delete </q-tooltip>
+                  <q-tooltip>Details</q-tooltip>
+                </q-btn>
+                
+                <q-btn
+                  flat
+                  dense
+                  size="xs"
+                  @click="deleteSSHTunnel(props.row.id)"
+                  icon="delete"
+                  color="pink"
+                >
+                  <q-tooltip>Delete</q-tooltip>
                 </q-btn>
               </q-td>
 
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                <div v-if="col.field == 'updated_at'">
-                  <span v-text="dateFromNow(col.value)"> </span>
+                <div v-if="col.field == 'is_connected'">
+                  <q-chip 
+                    :color="col.value ? 'green' : 'grey'"
+                    text-color="white"
+                    dense
+                  >
+                    ${ col.value ? 'Connected' : 'Disconnected' }
+                  </q-chip>
                 </div>
-                <div v-else>${ col.value }</div>
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
-
-    <div class="q-mt-lg">
-      <span class="text-h5">Client Data</span>
-    </div>
-    <q-card
-      id="clientDataCard"
-      class="q-mt-xs"
-    >
-      <q-card-section
-        class=""
-      >
-        <div class="row items-center no-wrap q-mb-md">
-          <div class="col">
-            <q-input
-              :label="$t('search')"
-              dense
-              class="q-pr-xl"
-              v-model="clientDataTable.search"
-            >
-              <template v-slot:before>
-                <q-icon name="search"> </q-icon>
-              </template>
-              <template v-slot:append>
-                <q-icon
-                  v-if="clientDataTable.search !== ''"
-                  name="close"
-                  @click="clientDataTable.search = ''"
-                  class="cursor-pointer"
-                >
-                </q-icon>
-              </template>
-            </q-input>
-          </div>
-          <div class="col-auto">
-            <q-select
-              filled
-              dense
-              v-model="clientDataFormDialog.ownerData"
-              :options="[{label: 'All Owner Data', value: ''}, ...ownerDataList.map(x => ({label: x.name || x.id, value: x.id}))]"
-              label="Owner Data"
-              class="q-mb-md"
-            ></q-select>
-          </div>
-          <div class="col-auto">
-            <q-btn
-              flat
-              color="grey"
-              icon="file_download"
-              class="q-mb-md"
-              @click="exportClientDataCSV"
-              >CSV</q-btn
-            >
-          </div>
-        </div>
-        <q-table
-          dense
-          flat
-          :rows="clientDataList"
-          row-key="id"
-          :columns="clientDataTable.columns"
-          v-model:pagination="clientDataTable.pagination"
-          :loading="clientDataTable.loading"
-          @request="getClientData"
-        >
-          <template v-slot:header="props">
-            <q-tr :props="props">
-              <q-th auto-width></q-th>
-              <q-th v-for="col in props.cols" :key="col.name" :props="props">
-                ${ col.label }
-              </q-th>
-            </q-tr>
-          </template>
-
-          <template v-slot:body="props">
-            <q-tr :props="props">
-              <q-td auto-width>
-                
-                <q-btn
-                  flat
-                  dense
-                  size="xs"
-                  @click="showEditClientDataForm(props.row)"
-                  icon="edit"
-                  color="light-blue"
-                  class="q-mr-sm"
-                >
-                  <q-tooltip> Edit </q-tooltip>
-                </q-btn>
-                
-                <q-btn
-                  flat
-                  dense
-                  size="xs"
-                  @click="deleteClientData(props.row.id)"
-                  icon="cancel"
-                  color="pink"
-                  class="q-mr-sm"
-                >
-                  <q-tooltip> Delete </q-tooltip>
-                </q-btn>
-              </q-td>
-
-              <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                <div v-if="col.field == 'updated_at'">
-                  <span v-text="dateFromNow(col.value)"> </span>
+                <div v-else-if="col.field == 'created_at'">
+                  <span v-text="dateFromNow(col.value)"></span>
                 </div>
                 <div v-else>${ col.value }</div>
               </q-td>
@@ -364,6 +259,159 @@ window_vars(user) }}
           <span v-else>Create</span>
         </q-btn>
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="sshTunnelFormDialog.show" position="top">
+    <q-card
+      v-if="sshTunnelFormDialog.show"
+      class="q-pa-lg q-pt-md lnbits__dialog-card"
+      style="min-width: 500px;"
+    >
+      <span class="text-h5">SSH Tunnel Configuration</span>
+
+      <q-input
+        filled
+        dense
+        v-model.trim="sshTunnelFormDialog.data.name"
+        label="Tunnel Name"
+        class="q-mb-md"
+        required
+      ></q-input>
+
+      <q-input
+        filled
+        dense
+        v-model.trim="sshTunnelFormDialog.data.remote_server_user"
+        label="Remote Server User"
+        class="q-mb-md"
+        required
+        hint="Username for SSH connection (e.g., ubuntu, root)"
+      ></q-input>
+
+      <q-input
+        filled
+        dense
+        v-model.trim="sshTunnelFormDialog.data.remote_server_url"
+        label="Remote Server URL"
+        class="q-mb-md"
+        required
+        hint="Server hostname or IP address (e.g., example.com, 192.168.1.100)"
+      ></q-input>
+
+      <div class="row q-col-gutter-md">
+        <div class="col">
+          <q-input
+            filled
+            dense
+            type="number"
+            v-model.number="sshTunnelFormDialog.data.local_port"
+            label="Local Port"
+            class="q-mb-md"
+            required
+            hint="Port on this LNBits instance"
+          ></q-input>
+        </div>
+        <div class="col">
+          <q-input
+            filled
+            dense
+            type="number"
+            v-model.number="sshTunnelFormDialog.data.remote_port"
+            label="Remote Port"
+            class="q-mb-md"
+            required
+            hint="Port on remote server"
+          ></q-input>
+        </div>
+      </div>
+
+      <q-checkbox
+        v-model="sshTunnelFormDialog.data.auto_reconnect"
+        label="Auto-reconnect on disconnect"
+        class="q-mb-md"
+      ></q-checkbox>
+
+      <div class="row q-mt-lg">
+        <q-btn @click="saveSSHTunnel" unelevated color="primary">
+          Create SSH Tunnel
+        </q-btn>
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="sshTunnelDetailsDialog.show" position="top">
+    <q-card
+      v-if="sshTunnelDetailsDialog.show"
+      class="q-pa-lg q-pt-md lnbits__dialog-card"
+      style="min-width: 600px;"
+    >
+      <span class="text-h5">SSH Tunnel Details</span>
+
+      <q-list class="q-mt-md">
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Name</q-item-label>
+            <q-item-label>${ sshTunnelDetailsDialog.data.name }</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Status</q-item-label>
+            <q-item-label>
+              <q-chip 
+                :color="sshTunnelDetailsDialog.data.is_connected ? 'green' : 'grey'"
+                text-color="white"
+              >
+                ${ sshTunnelDetailsDialog.data.is_connected ? 'Connected' : 'Disconnected' }
+              </q-chip>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Remote Server</q-item-label>
+            <q-item-label>${ sshTunnelDetailsDialog.data.remote_server_user }@${ sshTunnelDetailsDialog.data.remote_server_url }</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Port Mapping</q-item-label>
+            <q-item-label>Local :${ sshTunnelDetailsDialog.data.local_port } → Remote :${ sshTunnelDetailsDialog.data.remote_port }</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Auto-reconnect</q-item-label>
+            <q-item-label>${ sshTunnelDetailsDialog.data.auto_reconnect ? 'Enabled' : 'Disabled' }</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Public Key</q-item-label>
+            <q-item-label style="word-break: break-all; font-family: monospace; font-size: 12px;">
+              ${ sshTunnelDetailsDialog.data.public_key }
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-btn
+              flat
+              icon="content_copy"
+              @click="copyToClipboard(sshTunnelDetailsDialog.data.public_key, 'Public key copied!')"
+            ></q-btn>
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <div class="row q-mt-lg">
+        <q-btn v-close-popup flat color="grey">Close</q-btn>
       </div>
     </q-card>
   </q-dialog>

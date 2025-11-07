@@ -9,6 +9,13 @@ from .tasks import wait_for_paid_invoices
 from .views import lnbits_cloud_connect_generic_router
 from .views_api import lnbits_cloud_connect_api_router
 
+# Initialize SSH service
+try:
+    from .ssh_service import tunnel_manager
+    logger.info("SSH tunnel manager initialized")
+except Exception as e:
+    logger.warning(f"SSH tunnel manager initialization failed: {e}")
+
 lnbits_cloud_connect_ext: APIRouter = APIRouter(
     prefix="/lnbits_cloud_connect", tags=["LNbits Cloud Connect"]
 )
@@ -32,6 +39,14 @@ def lnbits_cloud_connect_stop():
             task.cancel()
         except Exception as ex:
             logger.warning(ex)
+    
+    # Stop all SSH tunnels on extension shutdown
+    try:
+        from .ssh_service import tunnel_manager
+        asyncio.run(tunnel_manager.stop_all_tunnels())
+        logger.info("All SSH tunnels stopped")
+    except Exception as ex:
+        logger.warning(f"Error stopping SSH tunnels: {ex}")
 
 
 def lnbits_cloud_connect_start():

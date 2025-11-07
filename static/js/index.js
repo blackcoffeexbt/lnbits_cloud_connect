@@ -58,6 +58,42 @@ window.app = Vue.createApp({
           descending: true,
           rowsNumber: 10
         }
+      },
+
+      sshTunnelFormDialog: {
+        show: false,
+        data: {
+          name: '',
+          remote_server_user: '',
+          remote_server_url: '',
+          local_port: null,
+          remote_port: null,
+          auto_reconnect: true
+        }
+      },
+      sshTunnelDetailsDialog: {
+        show: false,
+        data: {}
+      },
+      sshTunnelList: [],
+      sshTunnelTable: {
+        search: '',
+        loading: false,
+        columns: [
+          {"name": "name", "align": "left", "label": "Name", "field": "name", "sortable": true},
+          {"name": "remote_server_url", "align": "left", "label": "Server", "field": "remote_server_url", "sortable": true},
+          {"name": "local_port", "align": "left", "label": "Local Port", "field": "local_port", "sortable": true},
+          {"name": "remote_port", "align": "left", "label": "Remote Port", "field": "remote_port", "sortable": true},
+          {"name": "is_connected", "align": "left", "label": "Status", "field": "is_connected", "sortable": true},
+          {"name": "created_at", "align": "left", "label": "Created", "field": "created_at", "sortable": true}
+        ],
+        pagination: {
+          sortBy: 'created_at',
+          rowsPerPage: 10,
+          page: 1,
+          descending: true,
+          rowsNumber: 10
+        }
       }
     }
   },
@@ -87,6 +123,11 @@ window.app = Vue.createApp({
           props['search'] = this.clientDataTable.search
         }
         this.getClientData()
+      }
+    },
+    'sshTunnelTable.search': {
+      handler() {
+        this.getSSHTunnels()
       }
     }
   },
@@ -279,6 +320,111 @@ window.app = Vue.createApp({
       )
     },
 
+    //////////////// SSH Tunnels ////////////////////////
+    async showNewSSHTunnelForm() {
+      this.sshTunnelFormDialog.data = {
+        name: '',
+        remote_server_user: '',
+        remote_server_url: '',
+        local_port: null,
+        remote_port: null,
+        auto_reconnect: true
+      }
+      this.sshTunnelFormDialog.show = true
+    },
+
+    async saveSSHTunnel() {
+      try {
+        const data = {...this.sshTunnelFormDialog.data}
+        await LNbits.api.request(
+          'POST',
+          '/lnbits_cloud_connect/api/v1/ssh-tunnels',
+          null,
+          data
+        )
+        this.getSSHTunnels()
+        this.sshTunnelFormDialog.show = false
+        this.$q.notify({
+          type: 'positive',
+          message: 'SSH tunnel created successfully! Public key generated for server setup.'
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+
+    async getSSHTunnels(props) {
+      try {
+        this.sshTunnelTable.loading = true
+        const params = LNbits.utils.prepareFilterQuery(
+          this.sshTunnelTable,
+          props
+        )
+        const {data} = await LNbits.api.request(
+          'GET',
+          `/lnbits_cloud_connect/api/v1/ssh-tunnels?${params}`,
+          null
+        )
+        this.sshTunnelList = data.data
+        this.sshTunnelTable.pagination.rowsNumber = data.total
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      } finally {
+        this.sshTunnelTable.loading = false
+      }
+    },
+
+    async toggleSSHTunnel(tunnel) {
+      try {
+        const action = tunnel.is_connected ? 'disconnect' : 'connect'
+        const {data} = await LNbits.api.request(
+          'POST',
+          `/lnbits_cloud_connect/api/v1/ssh-tunnels/${tunnel.id}/${action}`,
+          null
+        )
+        
+        this.$q.notify({
+          type: 'positive',
+          message: data.message
+        })
+        
+        await this.getSSHTunnels()
+        
+        // Auto-refresh tunnel status
+        if (action === 'connect') {
+          setTimeout(() => this.getSSHTunnels(), 2000)
+        }
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+
+    async showSSHTunnelDetails(tunnel) {
+      this.sshTunnelDetailsDialog.data = {...tunnel}
+      this.sshTunnelDetailsDialog.show = true
+    },
+
+    async deleteSSHTunnel(tunnelId) {
+      await LNbits.utils
+        .confirmDialog('Are you sure you want to delete this SSH tunnel?')
+        .onOk(async () => {
+          try {
+            await LNbits.api.request(
+              'DELETE',
+              `/lnbits_cloud_connect/api/v1/ssh-tunnels/${tunnelId}`,
+              null
+            )
+            await this.getSSHTunnels()
+            this.$q.notify({
+              type: 'positive',
+              message: 'SSH tunnel deleted successfully'
+            })
+          } catch (error) {
+            LNbits.utils.notifyApiError(error)
+          }
+        })
+    },
+
     //////////////// Utils ////////////////////////
     dateFromNow(date) {
       return moment(date).fromNow()
@@ -290,6 +436,21 @@ window.app = Vue.createApp({
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
+    },
+    
+    copyToClipboard(text, message = 'Copied to clipboard!') {
+      navigator.clipboard.writeText(text).then(() => {
+        this.$q.notify({
+          type: 'positive',
+          message: message
+        })
+      }).catch(err => {
+        console.error('Failed to copy: ', err)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Failed to copy to clipboard'
+        })
+      })
     }
   },
   ///////////////////////////////////////////////////
@@ -299,8 +460,11 @@ window.app = Vue.createApp({
     this.fetchCurrencies()
     this.getOwnerData()
     this.getClientData()
-
+    this.getSSHTunnels()
     
-    
+    // Set up periodic refresh for SSH tunnel status
+    setInterval(() => {
+      this.getSSHTunnels()
+    }, 30000) // Refresh every 30 seconds
   }
 })

@@ -9,9 +9,12 @@ from .models import (
     ClientDataFilters,
     CreateClientData,
     CreateOwnerData,
+    CreateSSHTunnel,
     ExtensionSettings,  #  
     OwnerData,
     OwnerDataFilters,
+    SSHTunnel,
+    SSHTunnelFilters,
     UserExtensionSettings,  #  
 )
 
@@ -203,5 +206,102 @@ async def update_extension_settings(user_id: str, data: ExtensionSettings) -> Ex
     settings = UserExtensionSettings(**data.dict(), id=user_id)
     await db.update("lnbits_cloud_connect.extension_settings", settings)
     return settings
+
+
+############################ SSH Tunnels ############################
+async def create_ssh_tunnel(wallet_id: str, data: CreateSSHTunnel, private_key: str, public_key: str) -> SSHTunnel:
+    tunnel = SSHTunnel(
+        **data.dict(),
+        id=urlsafe_short_hash(),
+        wallet_id=wallet_id,
+        private_key=private_key,
+        public_key=public_key
+    )
+    await db.insert("lnbits_cloud_connect.ssh_tunnels", tunnel)
+    return tunnel
+
+
+async def get_ssh_tunnel(tunnel_id: str, wallet_id: str) -> SSHTunnel | None:
+    return await db.fetchone(
+        """
+            SELECT * FROM lnbits_cloud_connect.ssh_tunnels
+            WHERE id = :id AND wallet_id = :wallet_id
+        """,
+        {"id": tunnel_id, "wallet_id": wallet_id},
+        SSHTunnel,
+    )
+
+
+async def get_ssh_tunnel_by_id(tunnel_id: str) -> SSHTunnel | None:
+    return await db.fetchone(
+        """
+            SELECT * FROM lnbits_cloud_connect.ssh_tunnels
+            WHERE id = :id
+        """,
+        {"id": tunnel_id},
+        SSHTunnel,
+    )
+
+
+async def get_ssh_tunnels_paginated(
+    wallet_id: str | None = None,
+    filters: Filters[SSHTunnelFilters] | None = None,
+) -> Page[SSHTunnel]:
+    where = []
+    values = {}
+    if wallet_id:
+        where.append("wallet_id = :wallet_id")
+        values["wallet_id"] = wallet_id
+
+    return await db.fetch_page(
+        "SELECT * FROM lnbits_cloud_connect.ssh_tunnels",
+        where=where,
+        values=values,
+        filters=filters,
+        model=SSHTunnel,
+    )
+
+
+async def get_all_ssh_tunnels() -> list[SSHTunnel]:
+    return await db.fetchall(
+        "SELECT * FROM lnbits_cloud_connect.ssh_tunnels",
+        model=SSHTunnel,
+    )
+
+
+async def get_connected_ssh_tunnels() -> list[SSHTunnel]:
+    return await db.fetchall(
+        """
+            SELECT * FROM lnbits_cloud_connect.ssh_tunnels
+            WHERE is_connected = 1
+        """,
+        model=SSHTunnel,
+    )
+
+
+async def update_ssh_tunnel(data: SSHTunnel) -> SSHTunnel:
+    await db.update("lnbits_cloud_connect.ssh_tunnels", data)
+    return data
+
+
+async def update_ssh_tunnel_connection_status(tunnel_id: str, is_connected: bool, process_id: int | None = None) -> None:
+    await db.execute(
+        """
+            UPDATE lnbits_cloud_connect.ssh_tunnels
+            SET is_connected = :is_connected, process_id = :process_id, updated_at = strftime('%s', 'now')
+            WHERE id = :id
+        """,
+        {"id": tunnel_id, "is_connected": int(is_connected), "process_id": process_id},
+    )
+
+
+async def delete_ssh_tunnel(tunnel_id: str, wallet_id: str) -> None:
+    await db.execute(
+        """
+            DELETE FROM lnbits_cloud_connect.ssh_tunnels
+            WHERE id = :id AND wallet_id = :wallet_id
+        """,
+        {"id": tunnel_id, "wallet_id": wallet_id},
+    )
 
 

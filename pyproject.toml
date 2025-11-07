@@ -5,7 +5,7 @@ requires-python = ">=3.10,<3.13"
 description = "<<Make your LNbits available to the world>>"
 authors = []
 urls = { Homepage = "https://lnbits.com", Repository = "https://github.com/lnbits/tpos" }
-dependencies = [ "lnbits>1" ]
+dependencies = [ "lnbits>1", "cryptography>=3.0.0", "loguru" ]
 
 [tool.poetry]
 package-mode = false
