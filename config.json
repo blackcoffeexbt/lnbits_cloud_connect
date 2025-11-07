@@ -1,0 +1,23 @@
+{
+  "name": "LNbits Cloud Connect",
+  "short_description": "Make your LNbits available to the world",
+  "tile": "/lnbits_cloud_connect/static/image/lnbits_cloud_connect.png",
+  "version": "0.0.7",
+  "min_lnbits_version": "1.1.0",
+  "contributors": [
+    {
+      "name": "LNbits community",
+      "uri": "https://t.me/lnbits",
+      "role": "Emotional support"
+    }
+  ],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/lnbits_cloud_connect/main/static/image/1.png",
+      "link": "https://www.youtube.com/embed/SkkIwO_X4i4?si=9JJh1Fc6GfHDZK6b"
+    }
+  ],
+  "description_md": "https://raw.githubusercontent.com/lnbits/lnbits_cloud_connect/main/description.md",
+  "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/lnbits_cloud_connect/main/toc.md",
+  "license": "MIT"
+}
