@@ -27,6 +27,7 @@ from .crud import (
     get_ssh_tunnels_paginated,
     update_client_data,
     update_owner_data,
+    update_ssh_tunnel,
 )
 from .models import (
     ClientData,
@@ -399,6 +400,21 @@ async def api_get_ssh_tunnel_status(
     
     status = await tunnel_manager.get_tunnel_status(tunnel_id)
     return status
+
+
+@lnbits_cloud_connect_api_router.put("/api/v1/ssh-tunnels/{tunnel_id}")
+async def api_update_ssh_tunnel(
+    tunnel_id: str,
+    data: CreateSSHTunnel,
+    user: User = Depends(check_user_exists),
+) -> SSHTunnel:
+    tunnel = await get_ssh_tunnel(tunnel_id, user.wallets[0].id)
+    if not tunnel:
+        raise HTTPException(HTTPStatus.NOT_FOUND, "SSH tunnel not found.")
+    
+    updated_tunnel = SSHTunnel(**{**tunnel.dict(), **data.dict()})
+    tunnel = await update_ssh_tunnel(updated_tunnel)
+    return tunnel
 
 
 @lnbits_cloud_connect_api_router.delete("/api/v1/ssh-tunnels/{tunnel_id}")

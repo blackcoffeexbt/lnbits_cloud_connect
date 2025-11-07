@@ -121,6 +121,18 @@ window_vars(user) }}
                   flat
                   dense
                   size="xs"
+                  @click="showEditSSHTunnelForm(props.row)"
+                  icon="edit"
+                  color="orange"
+                  class="q-mr-sm"
+                >
+                  <q-tooltip>Edit</q-tooltip>
+                </q-btn>
+                
+                <q-btn
+                  flat
+                  dense
+                  size="xs"
                   @click="showSSHTunnelDetails(props.row)"
                   icon="info"
                   color="blue"
@@ -149,6 +161,15 @@ window_vars(user) }}
                     dense
                   >
                     ${ col.value ? 'Connected' : 'Disconnected' }
+                  </q-chip>
+                </div>
+                <div v-else-if="col.field == 'startup_enabled'">
+                  <q-chip 
+                    :color="col.value ? 'blue' : 'grey'"
+                    text-color="white"
+                    dense
+                  >
+                    ${ col.value ? 'Auto-start' : 'Manual' }
                   </q-chip>
                 </div>
                 <div v-else-if="col.field == 'created_at'">
@@ -333,9 +354,16 @@ window_vars(user) }}
         class="q-mb-md"
       ></q-checkbox>
 
+      <q-checkbox
+        v-model="sshTunnelFormDialog.data.startup_enabled"
+        label="Start tunnel automatically on startup"
+        class="q-mb-md"
+      ></q-checkbox>
+
       <div class="row q-mt-lg">
         <q-btn @click="saveSSHTunnel" unelevated color="primary">
-          Create SSH Tunnel
+          <span v-if="sshTunnelFormDialog.data.id">Update SSH Tunnel</span>
+          <span v-else>Create SSH Tunnel</span>
         </q-btn>
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
       </div>
@@ -390,6 +418,13 @@ window_vars(user) }}
           <q-item-section>
             <q-item-label caption>Auto-reconnect</q-item-label>
             <q-item-label>${ sshTunnelDetailsDialog.data.auto_reconnect ? 'Enabled' : 'Disabled' }</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Startup Enabled</q-item-label>
+            <q-item-label>${ sshTunnelDetailsDialog.data.startup_enabled ? 'Enabled' : 'Disabled' }</q-item-label>
           </q-item-section>
         </q-item>
 

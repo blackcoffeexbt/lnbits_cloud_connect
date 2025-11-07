@@ -85,6 +85,7 @@ class CreateSSHTunnel(BaseModel):
     local_port: int
     remote_port: int
     auto_reconnect: bool = True
+    startup_enabled: bool = False
 
 
 class SSHTunnel(BaseModel):
@@ -99,6 +100,7 @@ class SSHTunnel(BaseModel):
     public_key: str
     is_connected: bool = False
     auto_reconnect: bool = True
+    startup_enabled: bool = False
     process_id: int | None = None
     
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -116,6 +118,8 @@ class SSHTunnel(BaseModel):
                 v['is_connected'] = bool(v['is_connected'])
             if 'auto_reconnect' in v and isinstance(v['auto_reconnect'], int):
                 v['auto_reconnect'] = bool(v['auto_reconnect'])
+            if 'startup_enabled' in v and isinstance(v['startup_enabled'], int):
+                v['startup_enabled'] = bool(v['startup_enabled'])
         return v
 
 

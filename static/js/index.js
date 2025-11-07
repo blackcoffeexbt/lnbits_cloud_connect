@@ -68,7 +68,8 @@ window.app = Vue.createApp({
           remote_server_url: '',
           local_port: null,
           remote_port: null,
-          auto_reconnect: true
+          auto_reconnect: true,
+          startup_enabled: false
         }
       },
       sshTunnelDetailsDialog: {
@@ -85,6 +86,7 @@ window.app = Vue.createApp({
           {"name": "local_port", "align": "left", "label": "Local Port", "field": "local_port", "sortable": true},
           {"name": "remote_port", "align": "left", "label": "Remote Port", "field": "remote_port", "sortable": true},
           {"name": "is_connected", "align": "left", "label": "Status", "field": "is_connected", "sortable": true},
+          {"name": "startup_enabled", "align": "left", "label": "Startup", "field": "startup_enabled", "sortable": true},
           {"name": "created_at", "align": "left", "label": "Created", "field": "created_at", "sortable": true}
         ],
         pagination: {
@@ -328,25 +330,31 @@ window.app = Vue.createApp({
         remote_server_url: '',
         local_port: null,
         remote_port: null,
-        auto_reconnect: true
+        auto_reconnect: true,
+        startup_enabled: false
       }
+      this.sshTunnelFormDialog.show = true
+    },
+
+    async showEditSSHTunnelForm(tunnel) {
+      this.sshTunnelFormDialog.data = {...tunnel}
       this.sshTunnelFormDialog.show = true
     },
 
     async saveSSHTunnel() {
       try {
         const data = {...this.sshTunnelFormDialog.data}
-        await LNbits.api.request(
-          'POST',
-          '/lnbits_cloud_connect/api/v1/ssh-tunnels',
-          null,
-          data
-        )
+        const method = data.id ? 'PUT' : 'POST'
+        const url = data.id 
+          ? `/lnbits_cloud_connect/api/v1/ssh-tunnels/${data.id}`
+          : '/lnbits_cloud_connect/api/v1/ssh-tunnels'
+        
+        await LNbits.api.request(method, url, null, data)
         this.getSSHTunnels()
         this.sshTunnelFormDialog.show = false
         this.$q.notify({
           type: 'positive',
-          message: 'SSH tunnel created successfully! Public key generated for server setup.'
+          message: data.id ? 'SSH tunnel updated successfully!' : 'SSH tunnel created successfully! Public key generated for server setup.'
         })
       } catch (error) {
         LNbits.utils.notifyApiError(error)

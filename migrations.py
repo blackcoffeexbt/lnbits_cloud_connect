@@ -152,3 +152,16 @@ async def m006_fix_ssh_tunnel_timestamps(db):
         );
     """
     )
+
+
+async def m007_add_startup_enabled_to_ssh_tunnels(db):
+    """
+    Add startup_enabled field to ssh_tunnels table.
+    """
+    
+    await db.execute(
+        """
+        ALTER TABLE lnbits_cloud_connect.ssh_tunnels 
+        ADD COLUMN startup_enabled INTEGER NOT NULL DEFAULT 0;
+        """
+    )

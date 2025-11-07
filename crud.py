@@ -305,3 +305,16 @@ async def delete_ssh_tunnel(tunnel_id: str, wallet_id: str) -> None:
     )
 
 
+async def get_startup_enabled_ssh_tunnels() -> list[SSHTunnel]:
+    """
+    Get all SSH tunnels that are marked for startup.
+    """
+    return await db.fetchall(
+        """
+            SELECT * FROM lnbits_cloud_connect.ssh_tunnels
+            WHERE startup_enabled = 1
+        """,
+        model=SSHTunnel,
+    )
+
+

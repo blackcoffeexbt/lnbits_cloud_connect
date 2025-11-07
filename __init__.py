@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from lnbits.tasks import create_permanent_unique_task
 from loguru import logger
 
-from .crud import db
+from .crud import db, get_startup_enabled_ssh_tunnels
 from .tasks import wait_for_paid_invoices
 from .views import lnbits_cloud_connect_generic_router
 from .views_api import lnbits_cloud_connect_api_router
@@ -50,8 +50,32 @@ def lnbits_cloud_connect_stop():
 
 
 def lnbits_cloud_connect_start():
-    task = create_permanent_unique_task("ext_lnbits_cloud_connect", wait_for_paid_invoices)
-    scheduled_tasks.append(task)
+    startup_task = create_permanent_unique_task("ext_lnbits_cloud_connect_startup", start_startup_tunnels)
+    scheduled_tasks.append(startup_task)
+
+
+async def start_startup_tunnels():
+    """
+    Start all SSH tunnels marked for startup.
+    """
+    try:
+        from .ssh_service import tunnel_manager
+        
+        startup_tunnels = await get_startup_enabled_ssh_tunnels()
+        logger.info(f"Found {len(startup_tunnels)} tunnels marked for startup")
+        
+        for tunnel in startup_tunnels:
+            try:
+                success = await tunnel_manager.start_tunnel(tunnel)
+                if success:
+                    logger.info(f"Successfully started startup tunnel: {tunnel.name} ({tunnel.id})")
+                else:
+                    logger.error(f"Failed to start startup tunnel: {tunnel.name} ({tunnel.id})")
+            except Exception as e:
+                logger.error(f"Error starting startup tunnel {tunnel.name} ({tunnel.id}): {e}")
+                
+    except Exception as e:
+        logger.error(f"Error in startup tunnel initialization: {e}")
 
 
 __all__ = [
