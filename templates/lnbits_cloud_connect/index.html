@@ -45,7 +45,7 @@ window_vars(user) }}
     
 
     <div class="q-mt-lg">
-      <span class="text-h5">SSH Tunnels</span>
+      <span class="text-h5">SSH Tunnel</span>
     </div>
     <q-card
       id="sshTunnelCard"
@@ -78,8 +78,9 @@ window_vars(user) }}
               @click="showNewSSHTunnelForm()"
               unelevated
               color="primary"
+              v-if="sshTunnelList.length === 0"
             >
-              New SSH Tunnel
+              Create SSH Tunnel
             </q-btn>
           </div>
         </div>
@@ -92,6 +93,9 @@ window_vars(user) }}
           v-model:pagination="sshTunnelTable.pagination"
           :loading="sshTunnelTable.loading"
           @request="getSSHTunnels"
+          hide-pagination
+          :rows-per-page-options="[]"
+          v-if="sshTunnelList.length > 0"
         >
           <template v-slot:header="props">
             <q-tr :props="props">
@@ -180,6 +184,12 @@ window_vars(user) }}
             </q-tr>
           </template>
         </q-table>
+        
+        <div v-if="sshTunnelList.length === 0" class="text-center q-pa-lg">
+          <q-icon name="cloud_off" size="3rem" color="grey-5" class="q-mb-md"></q-icon>
+          <div class="text-h6 q-mb-sm">No SSH Tunnel Configured</div>
+          <div class="text-body2 text-grey-7 q-mb-lg">Create an SSH tunnel to connect your LNbits to the cloud</div>
+        </div>
       </q-card-section>
     </q-card>
   </div>

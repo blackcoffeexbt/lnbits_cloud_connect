@@ -301,6 +301,11 @@ async def api_create_ssh_tunnel(
 ) -> SSHTunnel:
     from .helpers import generate_ssh_keypair, encrypt_private_key
     
+    # Check if user already has a tunnel
+    existing_tunnels = await get_ssh_tunnels_paginated(wallet_id=user.wallets[0].id)
+    if existing_tunnels.total > 0:
+        raise HTTPException(HTTPStatus.BAD_REQUEST, "Only one SSH tunnel allowed per user.")
+    
     private_key, public_key = generate_ssh_keypair()
     encrypted_private_key = encrypt_private_key(private_key)
     
