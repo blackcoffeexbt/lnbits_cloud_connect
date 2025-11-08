@@ -39,7 +39,7 @@ class SSHTunnelManager:
                 "-o", "ServerAliveCountMax=3",
                 "-o", "ConnectTimeout=10",
                 "-i", key_file_path,
-                "-R", f"127.0.0.1:{tunnel.remote_port}:localhost:{tunnel.local_port}",
+                "-R", f"127.0.0.1:{tunnel.remote_port}:lnbits.embassy:{tunnel.local_port}",
                 f"{tunnel.remote_server_user}@{tunnel.remote_server_url}"
             ]
             
