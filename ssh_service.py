@@ -96,7 +96,7 @@ class SSHTunnelManager:
         """
         if tunnel_id not in self.active_tunnels:
             logger.warning(f"Tunnel {tunnel_id} is not active")
-            return False
+            return True
             
         try:
             process = self.active_tunnels[tunnel_id]
